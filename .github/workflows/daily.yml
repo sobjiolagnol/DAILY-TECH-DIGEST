@@ -2,13 +2,12 @@ name: Daily Tech Digest
 
 on:
   schedule:
-    - cron: "0 7 * * *"  # Tous les jours à 7h UTC
-  workflow_dispatch:     # Permet de lancer manuellement
+    - cron: "0 7 * * *"
+  workflow_dispatch:
 
 jobs:
   update-digest:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repo
         uses: actions/checkout@v3
@@ -31,4 +30,3 @@ jobs:
           git add .
           git commit -m "🤖 Daily article update" || echo "Nothing to commit"
           git push
-
