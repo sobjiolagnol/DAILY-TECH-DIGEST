@@ -2,15 +2,18 @@ name: Daily Tech Digest
 
 on:
   schedule:
-    - cron: "0 7 * * *"
-  workflow_dispatch:
+    - cron: "0 7 * * *"  # Tous les jours à 7h UTC
+  workflow_dispatch:     # Permet un déclenchement manuel
 
 jobs:
   update-digest:
     runs-on: ubuntu-latest
+    
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4  # Version mise à jour
+        with:
+          fetch-depth: 0  # Important pour git-auto-commit
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -18,15 +21,13 @@ jobs:
           python-version: '3.11'
 
       - name: Install dependencies
-        run: pip install requests
+        run: pip install -r requirements.txt  # Plus propre qu'une installation directe
 
-      - name: Run script
+      - name: Run scraping script
         run: python fetch_article.py
 
-      - name: Commit & Push
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'actions@github.com'
-          git add .
-          git commit -m "🤖 Daily article update" || echo "Nothing to commit"
-          git push
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v4  # Solution plus robuste
+        with:
+          commit_message: "🤖 Daily article update - $(date +'%Y-%m-%d')"
+          branch: main
