@@ -1,56 +1,96 @@
+
 import requests
-from bs4 import BeautifulSoup
-import os
 import datetime
+import os
+from typing import List, Dict, Optional
 import json
 
-JOURNAUX = {
-    "BBC News": {
-        "url": "https://www.bbc.com/news",
-        "selector": "h3.gs-c-promo-heading__title"
+SOURCES = {
+    "Hacker News": {
+        "url": "https://hacker-news.firebaseio.com/v0/topstories.json",
+        "processor": lambda: fetch_hn_article()
     },
-    "Le Monde": {
-        "url": "https://www.lemonde.fr",
-        "selector": "a.teaser__link"
+    "TechCrunch": {
+        "url": "https://techcrunch.com/wp-json/wp/v2/posts?per_page=1",
+        "processor": lambda: fetch_techcrunch_article()
     },
-    "CNN": {
-        "url": "https://edition.cnn.com",
-        "selector": "h3.cd__headline a"
+    "Dev.to": {
+        "url": "https://dev.to/api/articles?top=1&per_page=1",
+        "processor": lambda: fetch_devto_article()
     }
 }
 
-def fetch_headlines(name, url, selector):
+def fetch_hn_article() -> Optional[Dict]:
     try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.content, "html.parser")
-        elements = soup.select(selector)
-        headlines = []
-        for el in elements[:5]:  # Limite à 5 titres par site
-            text = el.get_text(strip=True)
-            link = el.get("href")
-            if link and not link.startswith("http"):
-                link = url.rstrip("/") + "/" + link.lstrip("/")
-            headlines.append({"title": text, "url": link})
-        return headlines
+        top_stories = requests.get(SOURCES["Hacker News"]["url"]).json()
+        top_id = top_stories[0]
+        story = requests.get(f"https://hacker-news.firebaseio.com/v0/item/{top_id}.json").json()
+        return {
+            "title": story.get('title', 'No title'),
+            "url": story.get('url', '#'),
+            "source": "Hacker News"
+        }
     except Exception as e:
-        print(f"[{name}] Erreur : {e}")
-        return []
+        print(f"Error fetching Hacker News: {e}")
+        return None
 
-def save_to_json(data):
+def fetch_techcrunch_article() -> Optional[Dict]:
+    try:
+        response = requests.get(SOURCES["TechCrunch"]["url"])
+        article = response.json()[0]
+        return {
+            "title": article.get('title', {}).get('rendered', 'No title'),
+            "url": article.get('link', '#'),
+            "source": "TechCrunch"
+        }
+    except Exception as e:
+        print(f"Error fetching TechCrunch: {e}")
+        return None
+
+def fetch_devto_article() -> Optional[Dict]:
+    try:
+        response = requests.get(SOURCES["Dev.to"]["url"])
+        article = response.json()[0]
+        return {
+            "title": article.get('title', 'No title'),
+            "url": article.get('url', '#'),
+            "source": "Dev.to"
+        }
+    except Exception as e:
+        print(f"Error fetching Dev.to: {e}")
+        return None
+
+def fetch_articles() -> List[Dict]:
+    articles = []
+    for source in SOURCES.values():
+        article = source["processor"]()
+        if article:
+            articles.append(article)
+    return articles
+
+def save_markdown(articles: List[Dict]):
     today = datetime.datetime.now().strftime("%Y-%m-%d")
-    os.makedirs("headlines", exist_ok=True)
-    filename = f"headlines/{today}.json"
-    with open(filename, "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-    print(f"Titres enregistrés dans {filename}")
+    filename = f"articles/{today}.md"
+    os.makedirs("articles", exist_ok=True)
+    
+    with open(filename, "w") as f:
+        f.write(f"# Daily Tech Digest - {today}\n\n")
+        f.write("## Top Articles from Around the Web\n\n")
+        
+        for article in articles:
+            f.write(f"### [{article['source']}]: {article['title']}\n")
+            f.write(f"[Read more]({article['url']})\n\n")
+        
+        f.write("\n---\n")
+        f.write(f"Generated at {datetime.datetime.now().strftime('%H:%M')}\n")
 
 def main():
-    all_headlines = {}
-    for name, info in JOURNAUX.items():
-        print(f"Scraping {name}...")
-        headlines = fetch_headlines(name, info["url"], info["selector"])
-        all_headlines[name] = headlines
-    save_to_json(all_headlines)
+    articles = fetch_articles()
+    if articles:
+        save_markdown(articles)
+        print(f"Successfully saved {len(articles)} articles to markdown file.")
+    else:
+        print("No articles were fetched.")
 
 if __name__ == "__main__":
     main()
