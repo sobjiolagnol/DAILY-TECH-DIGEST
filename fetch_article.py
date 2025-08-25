@@ -1,9 +1,9 @@
-
 import requests
 import datetime
 import os
+import csv
+import zipfile
 from typing import List, Dict, Optional
-import json
 
 SOURCES = {
     "Hacker News": {
@@ -20,6 +20,7 @@ SOURCES = {
     }
 }
 
+# --- fetchers ---
 def fetch_hn_article() -> Optional[Dict]:
     try:
         top_stories = requests.get(SOURCES["Hacker News"]["url"]).json()
@@ -60,6 +61,7 @@ def fetch_devto_article() -> Optional[Dict]:
         print(f"Error fetching Dev.to: {e}")
         return None
 
+# --- core ---
 def fetch_articles() -> List[Dict]:
     articles = []
     for source in SOURCES.values():
@@ -68,14 +70,15 @@ def fetch_articles() -> List[Dict]:
             articles.append(article)
     return articles
 
-def save_markdown(articles: List[Dict]):
+def save_markdown(articles: List[Dict]) -> str:
     today = datetime.datetime.now().strftime("%Y-%m-%d")
-    filename = f"articles/{today}.md"
+    timestamp = datetime.datetime.now().strftime("%H-%M")
+    filename = f"articles/{today}_{timestamp}.md"
     os.makedirs("articles", exist_ok=True)
     
-    with open(filename, "w") as f:
-        f.write(f"# Daily Tech Digest - {today}\n\n")
-        f.write("## Top Articles from Around the Web\n\n")
+    with open(filename, "w", encoding="utf-8") as f:
+        f.write(f"# Tech Digest - {today} {timestamp}\n\n")
+        f.write("## Top Articles\n\n")
         
         for article in articles:
             f.write(f"### [{article['source']}]: {article['title']}\n")
@@ -84,13 +87,59 @@ def save_markdown(articles: List[Dict]):
         f.write("\n---\n")
         f.write(f"Generated at {datetime.datetime.now().strftime('%H:%M')}\n")
 
+    return filename
+
+# --- actions supplémentaires sans API ---
+def save_csv(articles: List[Dict]):
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    filename = f"articles/{today}.csv"
+    os.makedirs("articles", exist_ok=True)
+
+    with open(filename, "a", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=["source", "title", "url"])
+        if f.tell() == 0:  # écrire l'entête si fichier vide
+            writer.writeheader()
+        writer.writerows(articles)
+
+def log_to_file(articles: List[Dict]):
+    filename = "articles/run.log"
+    with open(filename, "a", encoding="utf-8") as f:
+        f.write(f"\n[{datetime.datetime.now()}] {len(articles)} articles récupérés\n")
+        for article in articles:
+            f.write(f"- {article['source']}: {article['title']} ({article['url']})\n")
+
+def archive_day():
+    today = datetime.datetime.now().strftime("%Y-%m-%d")
+    zip_filename = f"articles/{today}.zip"
+    with zipfile.ZipFile(zip_filename, "w") as zipf:
+        for file in os.listdir("articles"):
+            if file.startswith(today) and (file.endswith(".md") or file.endswith(".csv")):
+                zipf.write(os.path.join("articles", file), file)
+
+# --- scheduler ---
 def main():
-    articles = fetch_articles()
-    if articles:
-        save_markdown(articles)
-        print(f"Successfully saved {len(articles)} articles to markdown file.")
+    now = datetime.datetime.now()
+    weekday = now.strftime("%A")  # ex: "Monday", "Tuesday"
+    hour = now.hour
+
+    # Exemple: exécuter seulement du lundi au vendredi, 9h / 14h / 18h
+    allowed_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
+    allowed_hours = [9, 14, 18]
+
+    if weekday in allowed_days and hour in allowed_hours:
+        articles = fetch_articles()
+        if articles:
+            filename = save_markdown(articles)
+            print(f"✅ {len(articles)} articles enregistrés dans {filename}")
+
+            # autres actions locales
+            save_csv(articles)
+            log_to_file(articles)
+            archive_day()
+        else:
+            print("⚠️ Aucun article trouvé.")
     else:
-        print("No articles were fetched.")
+        print(f"⏸ Non programmé pour {weekday} à {hour}h")
 
 if __name__ == "__main__":
     main()
