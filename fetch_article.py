@@ -89,7 +89,7 @@ def save_markdown(articles: List[Dict]) -> str:
 
     return filename
 
-# --- actions supplémentaires sans API ---
+# --- actions supplémentaires ---
 def save_csv(articles: List[Dict]):
     today = datetime.datetime.now().strftime("%Y-%m-%d")
     filename = f"articles/{today}.csv"
@@ -118,28 +118,17 @@ def archive_day():
 
 # --- scheduler ---
 def main():
-    now = datetime.datetime.now()
-    weekday = now.strftime("%A")  # ex: "Monday", "Tuesday"
-    hour = now.hour
+    articles = fetch_articles()
+    if articles:
+        filename = save_markdown(articles)
+        print(f"✅ {len(articles)} articles enregistrés dans {filename}")
 
-    # Exemple: exécuter seulement du lundi au vendredi, 9h / 14h / 18h
-    allowed_days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"]
-    allowed_hours = [9, 14, 18]
-
-    if weekday in allowed_days and hour in allowed_hours:
-        articles = fetch_articles()
-        if articles:
-            filename = save_markdown(articles)
-            print(f"✅ {len(articles)} articles enregistrés dans {filename}")
-
-            # autres actions locales
-            save_csv(articles)
-            log_to_file(articles)
-            archive_day()
-        else:
-            print("⚠️ Aucun article trouvé.")
+        # autres actions locales
+        save_csv(articles)
+        log_to_file(articles)
+        archive_day()
     else:
-        print(f"⏸ Non programmé pour {weekday} à {hour}h")
+        print("⚠️ Aucun article trouvé.")
 
 if __name__ == "__main__":
     main()
