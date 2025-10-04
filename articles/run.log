@@ -188,3 +188,8 @@
 - Hacker News: Fp8 runs ~100 tflops faster when the kernel name has "cutlass" in it (https://github.com/triton-lang/triton/pull/7298)
 - TechCrunch: After nine years of grinding, Replit finally found its market. Can it keep it? (https://techcrunch.com/2025/10/02/after-nine-years-of-grinding-replit-finally-found-its-market-can-it-keep-it/)
 - Dev.to: Congrats to the Google AI Multimodal Challenge Winners! (https://dev.to/devteam/congrats-to-the-google-ai-multimodal-challenge-winners-385f)
+
+[2025-10-04 07:07:47.297550] 3 articles récupérés
+- Hacker News: Offline card payments should be possible no later than 1 July 2026 (https://www.riksbank.se/en-gb/press-and-published/notices-and-press-releases/press-releases/2025/offline-card-payments-should-be-possible-no-later-than-1-july-2026/)
+- TechCrunch: Bezos predicts that millions will live in space kind of soon (https://techcrunch.com/2025/10/03/bezos-predicts-that-millions-will-live-in-space-kind-of-soon/)
+- Dev.to: Preloading the DEV (and Forem) home feed and sidebar for substantial performance benefits (https://dev.to/devteam/preloading-the-dev-and-forem-home-feed-and-sidebar-for-substantial-performance-benefits-2cg8)
