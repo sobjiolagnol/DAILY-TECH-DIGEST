@@ -1,0 +1,4 @@
+source,title,url
+Hacker News,11 year old unsoundness bugs found in Rust borrow checker,https://github.com/rust-lang/rust/issues/164250
+TechCrunch,Spotify users on iOS 27 can now ask Siri to play music without having to say &#8216;on Spotify&#8217;,https://techcrunch.com/2026/10/13/spotify-users-on-ios-27-can-now-ask-siri-to-play-music-without-having-to-say-on-spotify/
+Dev.to,"GitHub Isn't Just a Remote Git Server: How Spoke Clusters, Fork Alternates, and Actions Runner Sandboxes Work Under the Hood",https://dev.to/smtahosin/github-isnt-just-a-remote-git-server-how-spoke-clusters-fork-alternates-and-actions-runner-25ij
